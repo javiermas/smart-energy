@@ -1,6 +1,7 @@
 data
+notebooks/.ipynb_checkpoints/
+.eggs
+smartenergy.egg-info
 .DS_Store
-.eggs/
 *.swp
 *.pyc
-smartenergy.egg-info
