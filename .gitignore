@@ -1,0 +1,6 @@
+data
+.DS_Store
+.eggs/
+*.swp
+*.pyc
+smartenergy.egg-info
