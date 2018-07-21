@@ -6,8 +6,8 @@ from .connection import Connection
 
 class HourlyPredictions(Predictions):
 
-    def __init__(self, connection):
-        super(HourlyPredictions, self).__init__('hourly_predictions', Connection().get_connection())
+    def __init__(self, connection=Connection().get_connection()):
+        super().__init__('hourly_predictions', connection)
 
     def load_predictions(self):
         predictions = DataFrame(list(self.coll.find()))

@@ -6,7 +6,7 @@ from .mongo_collection import MongoCollection
 class Predictions(MongoCollection):
 
     def __init__(self, collection, connection):
-        super(Predictions, self).__init__(collection, connection)
+        super().__init__(collection, connection)
 
     @abstractmethod
     def load_predictions(self):
