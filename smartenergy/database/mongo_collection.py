@@ -13,5 +13,5 @@ class MongoCollection(object):
     def insert_many(self, data):
         self.coll.insert_many(data.to_dict('records'))
 
-    def drop_collection(self):
+    def drop(self):
         self.coll.drop()
