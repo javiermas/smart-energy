@@ -26,9 +26,10 @@ def insert_many(data, coll):
     coll.insert_many(data.to_dict('records'))
 
 
-def store_hourly_predictions(coll, model, solbox_id, datetime, prediction, ground_truth):
+def store_hourly_predictions(coll, model, target, solbox_id, datetime, prediction, ground_truth):
     coll.insert({
         'model': model,
+        'target': target,
         'solbox_id': solbox_id,
         'year': datetime.year,
         'month': datetime.month,
