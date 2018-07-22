@@ -17,6 +17,18 @@ class Measurements(MongoCollection):
 
         return concat(data)
 
+    def get_generator_measurement(self, t):
+        return 1
+
+    def get_battery_measurement(self, t):
+        return 1
+
+    def get_consumer_measurement(self, t):
+        return 1
+
+    def get_grid_measurement(self, t, station_id):
+        return 1
+
     @property
     def station_ids(self):
         return list(self.coll.distinct('solbox_id'))
