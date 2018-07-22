@@ -11,7 +11,7 @@ class MinutePredictions(Predictions):
 
     def load_predictions(self):
         predictions = DataFrame(list(self.coll.find()))
-        return predictions.set_index(['solbox_id', 'year', 'month', 'day', 'hour', 'minute']).sort_index()
+        return predictions.set_index(['solbox_id', 'datetime']).sort_index()
 
     def store(self, model, target, solbox_id, datetime, prediction, ground_truth):
         self.coll.insert({
