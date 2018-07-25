@@ -1,34 +1,28 @@
+import logging
 from abc import abstractmethod, ABC
+from ..database import HourlyMeasurements, SimulatedMeasurements
 
 
 class Environment(ABC):
 
-    def __init__(self):
-        pass
-
+    def __init__(self, ml_service, network, init_t, step_size,
+                 source_repo=HourlyMeasurements(), mirror_repo=SimulatedMeasurements()):
+        self.network = network
+        self.ml_service = ml_service
+        self.init_t = init_t
+        self.t = self.init_t
+        self.step_size = step_size
+        self.source_repo = source_repo
+        self.mirror_repo = mirror_repo
+    
+    @abstractmethod
     def run(self, steps):
-        for step in range(steps):
-            self.step()
+        pass
+    
+    @abstractmethod
+    def initialize(self):
+        pass
 
     @abstractmethod
     def step(self):
         pass
-
-
-class SBEnvironment(Environment):
-
-    def __init__(self, ml_service, network, init_t, step_size):
-        super().__init__()
-        self.network = network
-        self.ml_service = ml_service
-        self.t = init_t
-        self.step_size = step_size
-
-    def step(self):
-        self.t += self.step_size
-        readings = self.network.get_reading(self.t)
-        actions = self.ml_service.get_action(readings)
-        self.network.interact(actions)
-
-    def get_excess_battery(self, readings):
-        return 1
