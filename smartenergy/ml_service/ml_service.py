@@ -39,9 +39,4 @@ class MLService(Service):
         predictions = self.forecast_service(features)
         actions = self.agent_service(readings, features, predictions)
         actions = {i_name: {e: 1 for e in i.keys()} for i_name, i in self.action_space.items()}
-        self.store_readings(readings)
         return actions
-
-    def store_readings(self, readings):
-        self.repo.insert_many(readings)
-    
