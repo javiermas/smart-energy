@@ -11,6 +11,10 @@ class NetworkElement(ABC):
 
     def __init__(self):
         pass
+    
+    @abstractmethod
+    def initialize(self):
+        pass
 
     @abstractmethod
     def get_reading(self, t):
