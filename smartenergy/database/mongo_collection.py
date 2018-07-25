@@ -1,5 +1,4 @@
 from abc import ABC
-from pandas import DataFrame
 
 
 class MongoCollection(ABC):
@@ -8,8 +7,11 @@ class MongoCollection(ABC):
         self.coll = connection[coll]
         self.connection = connection
 
-    def load(self, nrows=0):
-        return DataFrame(list(self.coll.find().limit(nrows))).drop('_id', axis=1)
+    def load(self):
+        return list(self.coll.find())
+
+    def insert_one(self, data):
+        self.coll.insert_one(data)
 
     def insert_many(self, data):
         self.coll.insert_many(data)
