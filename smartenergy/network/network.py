@@ -7,8 +7,12 @@ class Network(NetworkElement):
         super().__init__()
         self.installations = installations or {}
 
-    def get_reading(self, t):
-        return {class_name: installation.get_reading(t) for
+    def initialize(self):
+        for installation in self.installations.values():
+            installation.initialize()
+
+    def get_reading(self):
+        return {class_name: installation.get_reading() for
                 class_name, installation in self.installations.items()}
 
     def interact(self, actions):
