@@ -8,6 +8,9 @@ class Predictions(MongoCollection):
     def __init__(self, collection, connection):
         super().__init__(collection, connection)
 
+    def load(self, nrows=0):
+        return DataFrame(list(self.coll.find().limit(nrows))).drop('_id', axis=1)
+
     @abstractmethod
     def load_predictions(self):
         pass
