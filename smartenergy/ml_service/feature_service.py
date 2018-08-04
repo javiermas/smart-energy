@@ -13,7 +13,7 @@ class FeatureService(Service):
         for feature in self.features:
             feature_data[feature.__class__.__name__] = feature(data)
 
-        data = self.merge_features(feature_data)
+        data = self.merge_features(feature_data).sort_index()
         return data
 
     def merge_features(self, data):
