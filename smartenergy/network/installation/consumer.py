@@ -1,14 +1,17 @@
 from .base import InstallationElement
-from ...database import HourlyMeasurements
+from ...database import SimulatedMeasurements
 
 
 class Consumer(InstallationElement):
 
-    def __init__(self, connection=HourlyMeasurements()):
+    def __init__(self, connection=SimulatedMeasurements()):
         super().__init__(connection)
+    
+    def initialize(self):
+        pass
 
-    def get_reading(self, t):
-        return self.connection.get_consumer_measurement(t)
+    def get_reading(self):
+        return self.connection.get_last_consumer_measurement(self.installation)
 
     def interact(self, action):
         pass

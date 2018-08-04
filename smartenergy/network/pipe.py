@@ -16,3 +16,6 @@ class Pipe(NetworkElement):
 
     def interact(self):
         pass
+
+    def initialize(self):
+        pass
