@@ -1,7 +1,5 @@
 import logging
-from abc import abstractmethod
 from pandas import DataFrame
-from ..database import HourlyMeasurements, SimulatedMeasurements
 from .base import Environment
 
 
@@ -17,16 +15,16 @@ class SBEnvironment(Environment):
 
     def run(self, steps):
         self.initialize()
-        for step in range(steps):
+        for _ in range(steps):
             self.step()
 
     def initialize(self):
         self.mirror_repo.drop()
-        self.transfer_data()
+        self._transfer_data()
         self.network.initialize()
         self.ml_service.train()
 
-    def transfer_data(self):
+    def _transfer_data(self):
         data = self.source_repo.load_until(self.init_t)
         self.mirror_repo.insert_many(data.to_dict('records'))
         logging.info(f'Successfully transferred {data.shape[0]} data points')
@@ -34,7 +32,7 @@ class SBEnvironment(Environment):
     def step(self):
         self.t += self.step_size
         readings = self.network.get_reading()
-        data = self.readings_to_data(readings) 
+        data = self.readings_to_data(readings)
         actions = self.ml_service.get_action(data)
         self.network.interact(actions)
 
