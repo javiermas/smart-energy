@@ -1,7 +1,8 @@
 import sys
+import re
 import logging
-from pandas import concat
 from datetime import timedelta
+from pandas import DataFrame, concat
 from .base import Service
 from ..database import SimulatedMeasurements
 
@@ -34,9 +35,18 @@ class MLService(Service):
 
     def get_action(self, readings):
         data = self.repo.load_from(readings['datetime'].iloc[0] - TRUNCATE_BACKLOADING)
-        data = concat([data, readings])
-        features = self.feature_service.get_features(data)
+        data = concat([data, readings], sort=True)
+        # Assumption: will only want to use the forecast for the next t
+        features = DataFrame(self.feature_service.get_features(data).loc[readings['datetime'].iloc[[0]]])
         predictions = self.forecast_service(features)
-        actions = self.agent_service(readings, features, predictions)
-        actions = {i_name: {e: 1 for e in i.keys()} for i_name, i in self.action_space.items()}
+        predictions = self._predictions_to_data(predictions)
+        state = concat([predictions, features], axis=1)
+        actions = self.agent_service(state)
+        #actions = {i_name: {e: 1 for e in i.keys()} for i_name, i in self.action_space.items()}
         return actions
+
+    def _predictions_to_data(self, predictions):
+        f = lambda x: 'prediction_' + str(int(x.group(0).split('_')[1]) + 1)
+        predictions = [p.rename(columns={col: re.sub('(lag_)(\d)', f, col)
+                       for col in p.columns}) for p in predictions.values()]
+        return concat(predictions, axis=1)
