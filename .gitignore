@@ -1,4 +1,5 @@
 data
+logs
 notebooks/.ipynb_checkpoints/
 .eggs
 smartenergy.egg-info
