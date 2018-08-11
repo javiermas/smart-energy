@@ -1,4 +1,4 @@
-from ...database import Stations
+from ....database import Stations
 from .xgboost_predictor import XGBoostPredictor
 
 
