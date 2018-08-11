@@ -42,12 +42,14 @@ action_space = {
     f'installation_{i}': {
         'generator_covered_energy': range(2),
         'transaction_with_energy': range(3),
-    } for i in range(len(station_ids))}
+    } for i in range(len(station_ids))
+}
 
 agent_parameters = {
     'epsilon': 0.1,
 }
 network_parameters = {
+    'hidden_units': 5,
     'learning_rate': 0.01,
 }
 
@@ -59,7 +61,7 @@ non_tunable_parameters = {
 parameters = {**agent_parameters, **network_parameters, **non_tunable_parameters}
 
 basic_agent = BasicAgent(**parameters)
-agent_service = AgentService(basic_agent, action_space)
+agent_service = AgentService(basic_agent)
 
 ml_service = MLService(
     feature_service=feature_service,
