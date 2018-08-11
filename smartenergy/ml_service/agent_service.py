@@ -14,4 +14,4 @@ class AgentService(Service):
         pass
 
     def get_action(self, state):
-        pass
+        self.agent.get_action(state)
