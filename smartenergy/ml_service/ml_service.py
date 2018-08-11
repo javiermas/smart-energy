@@ -13,6 +13,7 @@ logging.basicConfig(stream=sys.stdout,
                     level='DEBUG',
                     format='%(levelname)s:%(asctime)s:%(name)s:::%(message)s')
 
+
 class MLService(Service):
 
     def __init__(self, feature_service, forecast_service,
