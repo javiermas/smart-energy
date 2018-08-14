@@ -2,12 +2,12 @@ from random import choice
 import tensorflow as tf
 from .shallow_network import ShallowNetwork
 
+
 class BasicAgent(object):
 
-    def __init__(self, epsilon, action_space, state_size, **network_kwargs):
+    def __init__(self, epsilon, action_space, **network_kwargs):
         self.action_space = action_space
-        self.state_size = state_size
-        self.shallow_network = ShallowNetwork(self.action_space, state_size, **network_kwargs)
+        self.shallow_network = ShallowNetwork(self.action_space, **network_kwargs)
         self.shallow_network.initialize()
 
     def get_action(self, state):
@@ -20,7 +20,10 @@ class BasicAgent(object):
             feed = {
                 self.shallow_network.state: state,
             }
-            actions, expected_rewards = actions, expected_rewards = sess.run(nodes, feed)
+            sess.run([tf.global_variables_initializer()], feed)
+            output = sess.run(nodes, feed)
+            actions, expected_rewards = self.split_list(output, 2)
+            return actions
 
     def get_random_action(self):
         actions = {}
@@ -30,3 +33,7 @@ class BasicAgent(object):
                 actions[name][sub_space_name] = choice(range(sub_space_value))
 
         return actions
+    
+    @staticmethod
+    def split_list(_list, n_splits=1):
+        return [_list[i * len(_list) // n_splits: (i + 1) * len(_list) // n_splits] for i in range(n_splits)]
