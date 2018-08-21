@@ -12,18 +12,18 @@ station_ids = stations.station_ids
 network = Network()
 for _id in station_ids:
     row = stations.load_single_station(_id)
-    installation_elements = [
-        installation.Generator({
+    installation_elements = {
+        'generator': installation.Generator({
             'res_gen_bat': Pipe(row['res_gen_bat']),
             'res_gen_con': Pipe(row['res_gen_con']),
             'res_gen_grid': Pipe(row['res_gen_grid']),
         }),
-        installation.Battery({
+        'battery': installation.Battery({
             'res_bat_con': Pipe(row['res_bat_con']),
             'res_bat_grid': Pipe(row['res_bat_grid']),
         }),
-        installation.Consumer(),
-    ]
+        'consumer': installation.Consumer(),
+    }
     connection_to_grid = {k: Pipe(v) for k, v in row.items() if 'res_self_' in k}
     _installation = installation.Installation(_id, installation_elements, connection_to_grid)
     network.add_installation(_installation)
@@ -39,10 +39,10 @@ feature_service = FeatureService(features)
 models = [XGBoostHourlyGenerationStationPredictor(station_id=station_id) for station_id in station_ids]
 forecast_service = ForecastService(models)
 action_space = {
-    f'installation_{i}': {
-        'generator_covered_energy': range(2),
-        'transaction_with_energy': range(3),
-    } for i in range(len(station_ids))
+    f'installation_{_id}': {
+        'generator': range(2),  # 'generator_covered_energy'
+        'battery': range(3),  # 'transaction_with_energy'
+    } for _id in station_ids
 }
 
 agent_parameters = {
@@ -55,7 +55,6 @@ network_parameters = {
 
 non_tunable_parameters = {
     'action_space': action_space,
-    'state_size': 20,
 }
 
 parameters = {**agent_parameters, **network_parameters, **non_tunable_parameters}
