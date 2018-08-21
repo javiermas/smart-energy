@@ -11,9 +11,12 @@ class Network(NetworkElement):
         for installation in self.installations.values():
             installation.initialize()
 
+    def update(self):
+        for installation in self.installations.values():
+            installation.update()
+
     def get_reading(self):
-        return {class_name: installation.get_reading() for
-                class_name, installation in self.installations.items()}
+        return {class_name: installation.get_reading() for class_name, installation in self.installations.items()}
 
     def interact(self, actions):
         for _id, installation in self.installations.items():
