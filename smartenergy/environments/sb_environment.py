@@ -31,6 +31,7 @@ class SBEnvironment(Environment):
 
     def step(self):
         self.t += self.step_size
+        self.network.update()
         readings = self.network.get_reading()
         data = self.readings_to_data(readings)
         actions = self.ml_service.get_action(data)
