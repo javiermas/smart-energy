@@ -13,9 +13,10 @@ class Battery(InstallationElement):
     def initialize(self):
         init_measurement = self.connection.get_last_battery_measurement(self.installation)
         if init_measurement is None:
-            return init_measurement
+            self.state = init_measurement
+            return
 
-        return abs(normal(init_measurement, 6))
+        self.state = abs(normal(init_measurement, 6))
 
     def get_reading(self):
         return self.state
@@ -23,7 +24,7 @@ class Battery(InstallationElement):
     def interact(self, action):
         pass
 
-    def update_state(self, update):
+    def update(self, update):
         self.state += update
 
     def initialize_state(self, t):
