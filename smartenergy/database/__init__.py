@@ -6,3 +6,4 @@ from .minute_predictions import MinutePredictions
 from .models import Models
 from .stations import Stations
 from .connection import Connection
+from .memories import Memories
