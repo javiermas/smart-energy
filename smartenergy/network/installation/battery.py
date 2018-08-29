@@ -9,6 +9,7 @@ class Battery(InstallationElement):
         super().__init__(connection)
         self.pipes = pipes
         self.state = None
+        self.capacity = 1000
 
     def initialize(self):
         init_measurement = self.connection.get_last_battery_measurement(self.installation)
@@ -25,7 +26,8 @@ class Battery(InstallationElement):
         pass
 
     def update(self, update):
-        self.state += update
+        update = update / self.capacity
+        self.state = round(max(0, min(100, self.state + update)), 4)
 
     def initialize_state(self, t):
         self.connection.get_battery_measurement(t)
