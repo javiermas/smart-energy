@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from ...exceptions import SchemaException
 
-
-class Feature(ABC):
+class Transformer(ABC):
 
     def __init__(self):
         pass
@@ -35,3 +34,28 @@ class Feature(ABC):
             return func(self, data_needed)
 
         return new_func
+
+
+class Feature(Transformer):
+
+    @abstractmethod
+    def transform(self, data):
+        pass
+
+    @property
+    @abstractmethod
+    def schema(self):
+        pass
+
+
+class Preprocessor(Transformer):
+
+    @abstractmethod
+    def transform(self, data):
+        pass
+
+    @property
+    @abstractmethod
+    def schema(self):
+        pass
+
