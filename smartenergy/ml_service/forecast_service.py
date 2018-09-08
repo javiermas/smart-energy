@@ -13,6 +13,9 @@ class ForecastService(Service):
     def __call__(self, features):
         return self.get_forecast(features)
 
+    def initialize(self, data):
+        self.train(data)
+
     def get_forecast(self, features):
         if not self.trained_models:
             raise ValueError('No trained models')
