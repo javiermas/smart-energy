@@ -15,7 +15,6 @@ class DateFeatures(Feature):
         return features
 
     def get_date_features(self, data):
-        `
         return data
 
     def pivot_data(self, data):
