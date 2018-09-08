@@ -1,8 +1,10 @@
 data
 logs
 notebooks/.ipynb_checkpoints/
+.pytest_cache
 .eggs
 smartenergy.egg-info
 .DS_Store
 *.swp
 *.pyc
+*.xml
