@@ -10,8 +10,8 @@ class AgentService(Service):
     def __call__(self, *args, **kwargs):
         return self.get_action(*args, **kwargs)
 
-    def train(self):
-        pass
+    def train(self, data):
+        self.agent.train(data)
 
     def get_action(self, state):
         return self.agent.get_action(state)
