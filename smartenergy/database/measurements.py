@@ -12,14 +12,14 @@ class Measurements(MongoCollection):
         return DataFrame(list(self.coll.find().limit(nrows))).drop('_id', axis=1)
 
     def load_single_station(self, station_id, limit=0):
-        return DataFrame(list(self.coll.find({'solbox_id': int(station_id)}).limit(limit)))
+        return DataFrame(list(self.coll.find({'solbox_id': station_id}).limit(limit)))
 
     def load_multiple_stations(self, station_ids, limit=0):
-        data = [self.load_single_station(station, limit) for station in station_ids] 
+        data = [self.load_single_station(station, limit) for station in station_ids]
         return concat(data)
 
     def load_all_stations(self, limit=0):
-        data = [self.load_single_station(station, limit) for station in self.station_ids] 
+        data = [self.load_single_station(station, limit) for station in self.station_ids]
         return concat(data)
 
     def load_data_within(self, start, end):
@@ -45,13 +45,16 @@ class Measurements(MongoCollection):
         return m[0][field]
 
     def get_last_generator_measurement(self, station_id):
-        return self.get_last_field_single_station(station_id, 'energy_production_i')
+        return self.get_last_field_single_station(station_id, 'energy_generation_i')
 
     def get_last_consumer_measurement(self, station_id):
         return self.get_last_field_single_station(station_id, 'energy_consumption_i')
 
     def get_last_battery_measurement(self, station_id):
-        return self.get_last_field_single_station(station_id, 'battery_state_discrete')
+        return self.get_last_field_single_station(station_id, 'battery_state_continuous')
+
+    def get_last_excess_energy_measurement(self, station_id):
+        return self.get_last_field_single_station(station_id, 'energy_excess_i')
 
     @property
     def station_ids(self):
