@@ -1,8 +1,7 @@
+import sys
 import logging
+from time import sleep
 from pandas import DataFrame
-from datetime import timedelta
-from scipy.stats import norm
-from numpy import nanmean, nansum, nan
 
 from .base import Environment
 
@@ -11,39 +10,46 @@ class SBEnvironment(Environment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_up_logging()
         self.translation_dict = {
-            'Battery': 'u8StateOfBattery',
-            'Generator': 'fIPV_avg',
-            'Consumer': 'fILoadDirect_avg',
+            'Battery': 'battery_state_discrete',
+            'Generator': 'energy_generation_i',
+            'Consumer': 'energy_consumption_i',
         }
+        # TODO: rethink the different phases
+        self.start = self.source_repo.load_first_measurement()[0]['datetime']
+        self.burning_end = self.start + self.burning_steps * self.step_size
+        self.init_end = self.burning_end + self.init_steps * self.step_size
+        self.t = self.burning_end
 
     def run(self, steps):
         self.initialize()
+        logging.info(f'Running environment for {steps} steps')
         for _ in range(steps):
             self.step()
 
     def initialize(self):
         logging.info('Initializing environment')
         self.mirror_repo.drop()
-        start = self.source_repo.load_first_measurement()[0]['datetime']
-        self._transfer_data(start, self.init_t)
+        self._transfer_data(self.start, self.burning_end)
         self.network.initialize()
         self.ml_service.initialize()
         for step in range(self.init_steps):
-            self._transfer_data(self.init_t + (self.step_size * step),
-                                self.init_t + (self.step_size * (step + 1)))
+            self._transfer_data(self.t, self.t + self.step_size)
             self.network.update()
             readings = self.network.get_reading()
             data = self.readings_to_data(readings)
             actions = self.ml_service.get_action(data, random=True)
             self.network.interact(actions)
-            reward = self.get_reward()
+            reward = self.metrics_manager.get_reward(readings)
             self.ml_service.feed_reward(reward)
-            if step % 50 == 0:
-                logging.info(f'{step} memories created')
+            if (step + 1) % 50 == 0:
+                logging.info(f'{step+1} memories created')
+
+            self.t += self.step_size
 
         self.mirror_repo.drop()
-        self._transfer_data(start, self.init_t + (self.init_steps * self.step_size))
+        self._transfer_data(self.start, self.init_end)
         self.network.initialize()
         self.ml_service.initialize()
 
@@ -52,43 +58,18 @@ class SBEnvironment(Environment):
         self.mirror_repo.insert_many(data.to_dict('records'))
 
     def step(self):
-        self.t += self.step_size
+        self._transfer_data(self.t, self.t + self.step_size)
         self.network.update()
         readings = self.network.get_reading()
         data = self.readings_to_data(readings)
         actions = self.ml_service.get_action(data)
         self.network.interact(actions)
-        reward = self.get_reward()
-        self.ml_service.store_memory(actions, reward)
-
-    def get_reward(self):
-        readings = self.network.get_reading()
-        gaussian_reward = self.get_gaussian_reward(readings)
-        excess_battery_reward = self.get_excess_battery_reward(readings)
-        empty_battery_reward = self.get_empty_battery_reward(readings)
-        reward = gaussian_reward + excess_battery_reward + empty_battery_reward
-        print('Battery state')
-        print([installation['Battery'] for installation in readings.values()
-               if installation['Battery'] is not None])
-        print('Generation')
-        print(nanmean([installation['Generator'] for installation in readings.values()
-               if installation['Generator'] is not None]))
-        print('Consumption')
-        print(nanmean([installation['Consumer'] for installation in readings.values()
-               if installation['Consumer'] is not None]))
-        return reward
-    
-    def get_gaussian_reward(self, readings):
-        return nanmean([nan if installation['Battery'] is None else norm(65, 15).pdf(installation['Battery'])
-                        for installation in readings.values()]) * 100
-
-    def get_excess_battery_reward(self, readings):
-        return nansum([nan if installation['Battery'] is None else (installation['Battery'] > 95) * -1
-                       for installation in readings.values()])
-
-    def get_empty_battery_reward(self, readings):
-        return nansum([nan if installation['Battery'] is None else (installation['Battery'] < 5) * -1
-                       for installation in readings.values()])
+        reward = self.metrics_manager.get_reward(readings)
+        self.ml_service.feed_reward(reward)
+        self.metrics_manager.update_metrics(readings)
+        self.t += self.step_size
+        if self.t.weekday() == 0 and self.t.hour == 0:
+            self.get_weekly_report()
 
     def readings_to_data(self, readings):
         readings_list = []
@@ -99,3 +80,16 @@ class SBEnvironment(Environment):
             readings_list.append(reading_dict)
 
         return DataFrame(readings_list)
+
+    def get_weekly_report(self):
+        print('##############################################################################')
+        print(f'{self.t} Weekly report')
+        print(f'Real excess battery {self.metrics_manager.excess_real}')
+        print(f'Simulation excess battery {self.metrics_manager.excess_simulation}')
+        print('##############################################################################')
+        sleep(10)
+
+    def set_up_logging(self):
+        logging.basicConfig(stream=sys.stdout,
+                            level='DEBUG',
+                            format='self.t:%(levelname)s:%(asctime)s:%(name)s:::%(message)s')
