@@ -1,6 +1,8 @@
 data
 logs
 notebooks/.ipynb_checkpoints/
+smartenergy/network/grid.py
+smartenergy/network/installation/installation_grid.py
 .pytest_cache
 .eggs
 smartenergy.egg-info
