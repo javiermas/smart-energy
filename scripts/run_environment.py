@@ -2,7 +2,7 @@ from datetime import timedelta
 from smartenergy.network import Network, Pipe, installation
 from smartenergy.ml_service import MLService, FeatureService, ForecastService, AgentService
 from smartenergy.ml_service.features import LaggedReadings
-from smartenergy.ml_service.models import XGBoostHourlyGenerationStationPredictor, BasicAgent
+from smartenergy.ml_service.models import XGBoostHourlyGenerationStationPredictor, NeuralAgent
 from smartenergy.environments.sb_environment import SBEnvironment
 from smartenergy.database import HourlyMeasurements, Stations
 
@@ -11,37 +11,34 @@ stations = Stations()
 station_ids = stations.station_ids
 network = Network()
 for _id in station_ids:
-    row = stations.load_single_station(_id)
+    if _id == '311':
+        continue
+
+    station = stations.load_single_station(_id)
     installation_elements = {
-        'generator': installation.Generator({
-            'res_gen_bat': Pipe(row['res_gen_bat']),
-            'res_gen_con': Pipe(row['res_gen_con']),
-            'res_gen_grid': Pipe(row['res_gen_grid']),
-        }),
-        'battery': installation.Battery({
-            'res_bat_con': Pipe(row['res_bat_con']),
-            'res_bat_grid': Pipe(row['res_bat_grid']),
-        }),
+        'generator': installation.Generator({}),
+        'battery': installation.Battery({}, station['battery_capacity']*60/2/15*1000),
         'consumer': installation.Consumer(),
     }
-    connection_to_grid = {k: Pipe(v) for k, v in row.items() if 'res_self_' in k}
-    _installation = installation.Installation(_id, installation_elements, connection_to_grid)
+    _installation = installation.Installation(_id, installation_elements, station['connections'])
     network.add_installation(_installation)
 
 #  ML_service
 hourly_measurements = HourlyMeasurements()
-init_t = hourly_measurements.get_first_measurement()[0]['datetime'] + timedelta(days=10)
+#init_t = hourly_measurements.load_first_measurement()[0]['datetime'] + timedelta(days=10)
+burning_steps = 24 * 7
+init_steps = 10 #24 * 7
 step_size = timedelta(hours=1)
 
-lags = 24
-features = [LaggedReadings(lags=24)]
+lags = 3
+features = [LaggedReadings(lags=lags)]
 feature_service = FeatureService(features)
 models = [XGBoostHourlyGenerationStationPredictor(station_id=station_id) for station_id in station_ids]
 forecast_service = ForecastService(models)
 action_space = {
     f'installation_{_id}': {
         'generator': range(2),  # 'generator_covered_energy'
-        'battery': range(3),  # 'transaction_with_energy'
+        #'battery': range(3),  # 'transaction_with_energy'
     } for _id in station_ids
 }
 
@@ -59,7 +56,7 @@ non_tunable_parameters = {
 
 parameters = {**agent_parameters, **network_parameters, **non_tunable_parameters}
 
-basic_agent = BasicAgent(**parameters)
+basic_agent = NeuralAgent(**parameters)
 agent_service = AgentService(basic_agent)
 
 ml_service = MLService(
@@ -71,8 +68,9 @@ ml_service = MLService(
 sb_environment = SBEnvironment(
     ml_service=ml_service,
     network=network,
-    init_t=init_t,
+    burning_steps=burning_steps,
+    init_steps=init_steps,
     step_size=step_size
 )
 
-sb_environment.run(steps=100)
+sb_environment.run(steps=24*7)
