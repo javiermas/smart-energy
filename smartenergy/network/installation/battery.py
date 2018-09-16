@@ -1,20 +1,21 @@
 from numpy.random import normal
+
 from .base import InstallationElement
 from ...database import SimulatedMeasurements
 
 
 class Battery(InstallationElement):
 
-    def __init__(self, pipes, connection=SimulatedMeasurements()):
+    def __init__(self, pipes, capacity, connection=SimulatedMeasurements()):
         super().__init__(connection)
         self.pipes = pipes
         self.state = None
-        self.capacity = 1000
+        self.capacity = capacity
 
     def initialize(self):
         init_measurement = self.connection.get_last_battery_measurement(self.installation)
         if init_measurement is None:
-            self.state = init_measurement
+            self.state = 50
             return
 
         self.state = abs(normal(init_measurement, 6))
