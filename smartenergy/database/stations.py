@@ -15,6 +15,9 @@ class Stations(MongoCollection):
         station_data = Series(list(self.coll.find({'solbox_id': station_id}))[0])
         return station_data.drop('_id')
 
+    def update_single_station(self, update, station_id):
+        self.coll.update_one({'solbox_id': station_id}, {'$set': update}, upsert=True)
+
     @property
     def station_ids(self):
         return list(self.coll.distinct('solbox_id'))
