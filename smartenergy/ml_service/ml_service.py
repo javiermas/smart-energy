@@ -54,13 +54,11 @@ class MLService(Service):
         data = data.fillna(0)
         # Assumption: will only want to use the forecast for the next t
         features = DataFrame(self.feature_service.get_features(data).loc[readings['datetime'].iloc[[0]]])
-        if environ['DEBUG'] != 'NETWORK':
-            predictions = self.forecast_service(features)
-            predictions = self._predictions_to_data(predictions)
-            state = concat([predictions, features], axis=1)
-        else:
-            state = features
-        
+        # TODO: implement forecasting as part of state
+        #predictions = self.forecast_service(features)
+        #predictions = self._predictions_to_data(predictions)
+        #state = concat([predictions, features], axis=1)
+        state = features
         if not random:
             actions = self.agent_service(state.reset_index(drop=True))
         else:
