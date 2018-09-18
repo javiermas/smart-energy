@@ -45,13 +45,13 @@ class Measurements(MongoCollection):
         return m[0][field]
 
     def get_last_generator_measurement(self, station_id):
-        return self.get_last_field_single_station(station_id, 'energy_generation_i')
+        return self.get_last_field_single_station(station_id, 'energy_generation_computed_i')
 
     def get_last_consumer_measurement(self, station_id):
-        return self.get_last_field_single_station(station_id, 'energy_consumption_i')
+        return self.get_last_field_single_station(station_id, 'energy_consumption_computed_i')
 
     def get_last_battery_measurement(self, station_id):
-        return self.get_last_field_single_station(station_id, 'battery_state_continuous')
+        return self.get_last_field_single_station(station_id, 'battery_state_percent')
 
     def get_last_excess_energy_measurement(self, station_id):
         return self.get_last_field_single_station(station_id, 'energy_excess_i')
