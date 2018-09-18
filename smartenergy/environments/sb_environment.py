@@ -25,6 +25,7 @@ class SBEnvironment(Environment):
     def run(self, steps):
         self.initialize()
         logging.info(f'Running environment for {steps} steps')
+        sleep(5)
         for _ in range(steps):
             self.step()
 
@@ -35,6 +36,7 @@ class SBEnvironment(Environment):
         self.network.initialize()
         self.ml_service.initialize()
         for step in range(self.init_steps):
+            print(f'---------- {self.t} ----------')
             self._transfer_data(self.t, self.t + self.step_size)
             self.network.update()
             readings = self.network.get_reading()
@@ -52,12 +54,15 @@ class SBEnvironment(Environment):
         self._transfer_data(self.start, self.init_end)
         self.network.initialize()
         self.ml_service.initialize()
+        logging.info('Initialization finished')
+        sleep(5)
 
     def _transfer_data(self, start, end):
         data = self.source_repo.load_data_within(start, end)
         self.mirror_repo.insert_many(data.to_dict('records'))
 
     def step(self):
+        print(f'---------- {self.t} ----------')
         self._transfer_data(self.t, self.t + self.step_size)
         self.network.update()
         readings = self.network.get_reading()
