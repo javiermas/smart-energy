@@ -18,7 +18,8 @@ class LaggedReadings(Feature):
         features = data.copy()
         features = self.lag_features(features)
         features = self.pivot_data(features)
-        return features
+        features = self.add_date_features(features)
+        return features.set_index('datetime').sort_index()
 
     def lag_features(self, data):
         for lag in range(self.lags + 1):
@@ -31,8 +32,17 @@ class LaggedReadings(Feature):
         data = data.set_index(['solbox_id', 'datetime'])[self.lagged_features+self.features_to_lag]
         data = pivot_table(data, columns='solbox_id', index='datetime')
         data.columns = ['_station'.join(col).strip() for col in data.columns.values]
+        return data.reset_index()
+
+    def add_date_features(self, data):
+        data['year'] = data['datetime'].dt.year
+        data['month'] = data['datetime'].dt.month
+        data['week'] = data['datetime'].dt.week
+        data['weekday'] = data['datetime'].dt.weekday
+        data['day'] = data['datetime'].dt.day
+        data['hour'] = data['datetime'].dt.hour
         return data
-    
+
     @property
     def schema_input(self):
         schema_core = {
@@ -40,4 +50,4 @@ class LaggedReadings(Feature):
             'datetime': object,
         }
         schema_features = {f: Number for f in self.features_to_lag}
-        return {**schema_core, **schema_features}
+        return {'HourlyMeasurements': {**schema_core, **schema_features}}
