@@ -24,11 +24,15 @@ class MetricsManager(object):
         print([installation['Battery'] for installation in readings.values()
                if installation['Battery'] is not None])
         print('Generation')
-        print(nanmean([installation['Generator'] for installation in readings.values()
-               if installation['Generator'] is not None]))
+        print([round(installation['Generator'], 2) for installation in readings.values()
+               if installation['Generator'] is not None])
+        #print(nanmean([installation['Generator'] for installation in readings.values()
+        #       if installation['Generator'] is not None]))
         print('Consumption')
-        print(nanmean([installation['Consumer'] for installation in readings.values()
-               if installation['Consumer'] is not None]))
+        print([round(installation['Consumer'], 2) for installation in readings.values()
+               if installation['Consumer'] is not None])
+        #print(nanmean([installation['Consumer'] for installation in readings.values()
+        #       if installation['Consumer'] is not None]))
         return reward
     
     def get_gaussian_reward(self, readings):

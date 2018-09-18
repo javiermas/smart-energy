@@ -6,14 +6,13 @@ from .base import Preprocessor
 class BasicPreprocessor(Preprocessor):
 
     vars_to_float = ['energy_consumption_i', 'energy_generation_i', 'energy_excess_i', 'temperature',
-                     'energy_to_battery_i', 'energy_to_grid_i', 'price_sell', 'price_buy'
-                     #'energy_consumption_v', 'energy_generation_v', 'energy_to_battery_v', 'energy_to_grid_v',
-                     ]
+                     'energy_to_battery_i', 'energy_to_grid_i', 'price_sell', 'price_buy']
+                     #'energy_consumption_v', 'energy_generation_v', 'energy_to_battery_v', 'energy_to_grid_v'
     vars_with_outliers = ['energy_consumption_i', 'energy_generation_i',
                           'energy_to_grid_i', 'energy_to_battery_i']
     vars_needing_offset = ['energy_consumption_i', 'energy_generation_i']
-    #vars_to_wats = ['energy_consumption', 'energy_production', 'energy_excess',
-    #                'energy_to_battery', 'energy_to_grid']
+    vars_to_wats = ['energy_consumption', 'energy_production', 'energy_excess',
+                    'energy_to_battery', 'energy_to_grid']
 
     def transform(self, data):
         _data = data['MinuteMeasurements'].copy()
@@ -34,14 +33,14 @@ class BasicPreprocessor(Preprocessor):
         data['MinuteMeasurements'] = _data[cols_to_keep].reset_index()
         return data
 
-    #def add_watts(self, data):
-    #    for var in self.vars_to_wats:
-    #        if var in ['energy_excess', 'energy_generation']:
-    #            data[var+'_w'] = data[var+'_i']
+    def add_watts(self, data):
+        for var in self.vars_to_wats:
+            if var in ['energy_excess', 'energy_generation']:
+                data[var+'_w'] = data[var+'_i']
 
-    #        data[var+'_w'] = self.compute_w_per_hour_for_two_minutes_data(data[var+'_i'], data[var+'_v'])
+            data[var+'_w'] = self.compute_w_per_hour_for_two_minutes_data(data[var+'_i'], data[var+'_v'])
 
-    #    return data
+        return data
 
     @staticmethod
     def rename_columns(data):
