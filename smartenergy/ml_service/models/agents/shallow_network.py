@@ -27,27 +27,24 @@ class ShallowNetwork(Network):
             b = tf.Variable(self.initializer(shape=[self.hidden_units * self.num_actions]),
                             name='common_bias', validate_shape=False)
             common_layer = tf.nn.relu(tf.matmul(self.state, W) + b, name='common_layer')
-            weights, Q_out, Q_next, actions, actions_taken, losses = [{}] * 6
+            weights, Q_out, Q_next, losses = {}, {}, {}, {}
             for key, sub_space in self.action_space.items():
-                weights[key], Q_out[key], Q_next[key], actions[key], actions_taken[key], losses[key] = [{}] * 6
+                weights[key], Q_out[key], Q_next[key], losses[key] = {}, {}, {}, {}
                 for sub_space_key, sub_space_value in sub_space.items():
                     Q_next[key][sub_space_key] = tf.placeholder(
                         tf.float32, [1, len(self.action_space[key][sub_space_key])],
                         name=f'Q_next_{key}_{sub_space_key}')
                     weights[key][sub_space_key] = tf.Variable(
-                        self.initializer(shape=[tf.shape(common_layer)[1], max(sub_space_value)]),
+                        self.initializer(shape=[tf.shape(common_layer)[1], len(sub_space_value)]),
                         name=f'weights_{key}_{sub_space_key}',
                         validate_shape=False)
-                    _Q_out = tf.matmul(common_layer, weights[key][sub_space_key])
-                    actions[key][sub_space_key] = tf.argmax(_Q_out)
-                    Q_out[key][sub_space_key] = _Q_out
+                    Q_out[key][sub_space_key] = tf.matmul(common_layer, weights[key][sub_space_key])
                     losses[key][sub_space_key] = tf.losses.mean_squared_error(
                         Q_next[key][sub_space_key], Q_out[key][sub_space_key])
-
+            
+            self.expected_reward = Q_out
             self.loss = tf.reduce_mean([loss for sub_space_losses in losses.values()
-                                  for loss in sub_space_losses.values()])
+                                        for loss in sub_space_losses.values()])
             optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
             tf.summary.FileWriter("./logs/agraph", self.graph).close()
-            update = optimizer.minimize(self.loss)
-            self.actions = actions
-            self.reward = Q_out
+            self.update = optimizer.minimize(self.loss)
