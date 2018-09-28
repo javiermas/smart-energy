@@ -9,8 +9,9 @@ class LaggedReadings(Feature):
     def __init__(self, lags):
         super().__init__()
         self.lags = lags
-        self.features_to_lag = ['energy_generation_i', 'energy_consumption_i', 'energy_to_grid_i',
-                                'energy_to_battery_i', 'temperature', 'battery_state_discrete']
+        self.features_to_lag = ['energy_generation_computed_i', 'energy_consumption_computed_i',
+                                'energy_to_grid_i', 'energy_to_battery_i', 'temperature',
+                                'battery_state_discrete']
         self.lagged_features = [f'{f}_lag_{lag}' for f in self.features_to_lag
                                 for lag in range(0, self.lags + 1)]
 
