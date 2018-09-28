@@ -15,34 +15,39 @@ class MetricsManager(object):
         self.excess_simulation += nanmean([installation['Generator'] for installation in readings.values()
                                            if installation['Battery'] == 100])
 
-    def get_reward(self, readings):
-        gaussian_reward = self.get_gaussian_reward(readings)
-        excess_battery_reward = self.get_excess_battery_reward(readings)
-        empty_battery_reward = self.get_empty_battery_reward(readings)
-        reward = gaussian_reward + excess_battery_reward + empty_battery_reward
+    def get_cumulative_reward(self, readings):#, next_state_values, next_state_weight):
         print('Battery state')
         print([installation['Battery'] for installation in readings.values()
                if installation['Battery'] is not None])
         print('Generation')
         print([round(installation['Generator'], 2) for installation in readings.values()
                if installation['Generator'] is not None])
-        #print(nanmean([installation['Generator'] for installation in readings.values()
-        #       if installation['Generator'] is not None]))
         print('Consumption')
         print([round(installation['Consumer'], 2) for installation in readings.values()
                if installation['Consumer'] is not None])
-        #print(nanmean([installation['Consumer'] for installation in readings.values()
-        #       if installation['Consumer'] is not None]))
-        return reward
+        cumulative_reward = {
+            name: (0 if reading['Battery'] is None else self._get_cumulative_reward_lambda(reading['Battery']))
+            for name, reading in readings.items()
+        }
+        return cumulative_reward
     
-    def get_gaussian_reward(self, readings):
-        return nanmean([nan if installation['Battery'] is None else norm(65, 15).pdf(installation['Battery'])
-                        for installation in readings.values()]) * 100
+    def _get_cumulative_reward_lambda(self, state):#, next_state_value, next_state_weight):
+        current_state_reward = sum([
+            self.get_gaussian_reward(state),
+            self.get_empty_battery_reward(state),
+            self.get_excess_battery_reward(state)
+        ])
+        #next_state_reward = next_state_weight * next_state_value
+        return current_state_reward #+ next_state_reward
 
-    def get_excess_battery_reward(self, readings):
-        return nansum([nan if installation['Battery'] is None else (installation['Battery'] > 95) * -1
-                       for installation in readings.values()])
+    @staticmethod
+    def get_gaussian_reward(reading):
+        return norm(65, 15).pdf(reading) * 100
 
-    def get_empty_battery_reward(self, readings):
-        return nansum([nan if installation['Battery'] is None else (installation['Battery'] < 5) * -1
-                       for installation in readings.values()])
+    @staticmethod
+    def get_excess_battery_reward(reading):
+        return (reading > 95) * -1
+
+    @staticmethod
+    def get_empty_battery_reward(reading):
+        return (reading < 5) * -1
