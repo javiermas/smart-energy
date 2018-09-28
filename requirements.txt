@@ -3,3 +3,5 @@ pymongo
 numpy
 xgboost
 scipy
+tensorflow
+jupyterthemes
