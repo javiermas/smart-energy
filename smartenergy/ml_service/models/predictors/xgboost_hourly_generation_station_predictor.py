@@ -21,9 +21,9 @@ class XGBoostHourlyGenerationStationPredictor(XGBoostPredictor):
     @property
     def feature_schema(self):
         lags = 2
-        measurements = ['fIExcess_avg', 'fILoadDirect_avg', 'fILoad_avg',
-                        'fIPV_avg', 'fIToBat_avg', 'fIToGrid_avg',
-                        'fTemperature_avg', 'u8StateOfBattery']
+        measurements = ['energy_excess_i', 'energy_generation_computed_i',
+                        'energy_consumption_computed_i', 'energy_to_battery_i',
+                        'energy_to_grid_i', 'temperature', 'battery_state_percent']
         lagged_measurements = {f'{m}_lag_{lag}_station{station}': float for m in measurements
                                for station in self.station_ids for lag in range(1, lags)}
         return lagged_measurements
@@ -31,5 +31,5 @@ class XGBoostHourlyGenerationStationPredictor(XGBoostPredictor):
     @property
     def target_schema(self):
         return {
-            f'fILoadDirect_avg_lag_0_station{self.station_id}': float
+            f'energy_generation_computed_i_lag_0_station{self.station_id}': float
         }
