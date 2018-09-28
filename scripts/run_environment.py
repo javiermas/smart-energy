@@ -27,7 +27,7 @@ for _id in station_ids:
 hourly_measurements = HourlyMeasurements()
 #init_t = hourly_measurements.load_first_measurement()[0]['datetime'] + timedelta(days=10)
 burning_steps = 24 * 7
-init_steps = 10 #24 * 7
+init_steps = 10  # 24 * 7
 step_size = timedelta(hours=1)
 
 lags = 3
