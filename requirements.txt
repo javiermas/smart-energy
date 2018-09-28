@@ -4,3 +4,4 @@ numpy
 xgboost
 scipy
 tensorflow
+jupyterthemes
