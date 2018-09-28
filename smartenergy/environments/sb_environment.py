@@ -5,22 +5,28 @@ from pandas import DataFrame
 
 from .base import Environment
 
+DEFAULT_HYPERPARAMETERS = {
+    'next_state_weight': 0.1
+}
+
 
 class SBEnvironment(Environment):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, hyperparameters=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_up_logging()
         self.translation_dict = {
             'Battery': 'battery_state_discrete',
-            'Generator': 'energy_generation_i',
-            'Consumer': 'energy_consumption_i',
+            'Generator': 'energy_generation_computed_i',
+            'Consumer': 'energy_consumption_computed_i',
         }
         # TODO: rethink the different phases
         self.start = self.source_repo.load_first_measurement()[0]['datetime']
         self.burning_end = self.start + self.burning_steps * self.step_size
         self.init_end = self.burning_end + self.init_steps * self.step_size
         self.t = self.burning_end
+        self.hyperparameters = hyperparameters or DEFAULT_HYPERPARAMETERS
+        self.next_state_weight = self.hyperparameters['next_state_weight']
 
     def run(self, steps):
         self.initialize()
@@ -43,7 +49,7 @@ class SBEnvironment(Environment):
             data = self.readings_to_data(readings)
             actions = self.ml_service.get_action(data, random=True)
             self.network.interact(actions)
-            reward = self.metrics_manager.get_reward(readings)
+            reward = self.metrics_manager.get_cumulative_reward(readings)
             self.ml_service.feed_reward(reward)
             if (step + 1) % 50 == 0:
                 logging.info(f'{step+1} memories created')
@@ -53,7 +59,7 @@ class SBEnvironment(Environment):
         self.mirror_repo.drop()
         self._transfer_data(self.start, self.init_end)
         self.network.initialize()
-        self.ml_service.initialize()
+        self.ml_service.train()
         logging.info('Initialization finished')
         sleep(5)
 
@@ -69,7 +75,7 @@ class SBEnvironment(Environment):
         data = self.readings_to_data(readings)
         actions = self.ml_service.get_action(data)
         self.network.interact(actions)
-        reward = self.metrics_manager.get_reward(readings)
+        reward = self.metrics_manager.get_cumulative_reward(readings)
         self.ml_service.feed_reward(reward)
         self.metrics_manager.update_metrics(readings)
         self.t += self.step_size
