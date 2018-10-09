@@ -1,6 +1,7 @@
 from random import choice
 import tensorflow as tf
-from numpy import argmax
+import pandas as pd
+from numpy import argmax, zeros
 
 from .shallow_network import ShallowNetwork
 
@@ -9,7 +10,7 @@ class NeuralAgent(object):
 
     policies = {
         'greedy': {
-            'action': argmax,
+            'action': lambda x: int(argmax(x)),
             'reward': max,
         }
     }
@@ -24,34 +25,32 @@ class NeuralAgent(object):
 
     def train(self, memories):
         with tf.Session(graph=self.shallow_network.graph) as sess:
-            action_nodes = self.dict_to_list_of_tuples(self.shallow_network.actions)
-            reward_nodes = self.dict_to_list_of_tuples(self.shallow_network.reward)
-            #nodes = [node[2] for node in action_nodes + reward_nodes]
+            reward_real = pd.DataFrame([m['reward'] for m in memories])
+            reward_real_feed = {self.shallow_network.reward_real[installation]['generator']:
+                                (reward_real[installation].values.reshape(-1, 1) if installation in reward_real.columns else zeros([len(memories), 1]))
+                                for installation in self.shallow_network.reward_real}
             nodes = [
-                self.shallow_network.update
+                self.shallow_network.update,
+                self.shallow_network.loss,
             ]
             feed = {
-                self.shallow_network.state: state,
+                **{self.shallow_network.state: pd.DataFrame([m['state'] for m in memories])},
+                **reward_real_feed,
             }
-            sess.run([tf.global_variables_initializer()], feed)
-            output = sess.run(nodes, feed)
-            actions, exp_rewards = self.split_list(output, 2)
-            actions = {node[0]: {node[1]: action} for node, action in zip(action_nodes, actions)}
-            exp_rewards = {node[0]: {node[1]: reward} for node, reward in zip(reward_nodes, exp_rewards)}
-            return actions
+            sess.run([tf.global_variables_initializer()], feed_dict=feed)
+            _, loss = sess.run(nodes, feed_dict=feed)
+
+        return float(loss)
 
     def get_action(self, state, random):
         with tf.Session(graph=self.shallow_network.graph) as sess:
-            #action_nodes = self.dict_to_list_of_tuples(self.shallow_network.actions)
-            reward_nodes = self.dict_to_list_of_tuples(self.shallow_network.expected_reward)
+            reward_nodes = self.dict_to_list_of_tuples(self.shallow_network.reward_expected)
             nodes = [node[2] for node in reward_nodes]
             feed = {
                 self.shallow_network.state: state,
             }
-            sess.run([tf.global_variables_initializer()], feed)
-            output = sess.run(nodes, feed)
-            #actions, exp_rewards = self.split_list(output, 2)
-            #actions = {node[0]: {node[1]: float(action)} for node, action in zip(action_nodes, actions)}
+            sess.run([tf.global_variables_initializer()], feed_dict=feed)
+            output = sess.run(nodes, feed_dict=feed)
             exp_rewards = {node[0]: {node[1]: reward.reshape(-1)} for node, reward in zip(reward_nodes, output)}
             if random:
                 actions = self.get_random_action()
@@ -59,24 +58,22 @@ class NeuralAgent(object):
                 actions = {node[0]: {node[1]: self.action_func(reward)}
                            for node, reward in zip(reward_nodes, output)}
 
-            self.last_expected_reward = exp_rewards
+            self.last_reward_expected = exp_rewards
             self.last_state = state
             self.last_actions = actions
             return actions
 
     def get_state_value(self, state):
         with tf.Session(graph=self.shallow_network.graph) as sess:
-            #action_nodes = self.dict_to_list_of_tuples(self.shallow_network.actions)
-            reward_nodes = self.dict_to_list_of_tuples(self.shallow_network.expected_reward)
+            reward_nodes = self.dict_to_list_of_tuples(self.shallow_network.reward_expected)
             nodes = [node[2] for node in reward_nodes]
             feed = {
                 self.shallow_network.state: state,
             }
-            sess.run([tf.global_variables_initializer()], feed)
+            sess.run([tf.global_variables_initializer()], feed_dict=feed)
             output = sess.run(nodes, feed)
-            #actions, exp_rewards = self.split_list(output, 2)
-            #actions = {node[0]: {node[1]: float(action)} for node, action in zip(action_nodes, actions)}
-            exp_rewards = {node[0]: {node[1]: reward.reshape(-1)} for node, reward in zip(reward_nodes, output)}
+            exp_rewards = {node[0]: self.reward_func(reward.reshape(-1))
+                           for node, reward in zip(reward_nodes, output)}
             return exp_rewards
 
     def get_random_action(self):
