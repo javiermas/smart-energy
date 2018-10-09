@@ -1,14 +1,16 @@
-import logging
 from abc import abstractmethod, ABC
 
-from ..database import HourlyMeasurements, SimulatedMeasurements
 from .metrics_manager import MetricsManager
+from ..logger import Logger
+from ..database import HourlyMeasurements, SimulatedMeasurements
+
 
 
 class Environment(ABC):
 
     def __init__(self, ml_service, network, burning_steps, init_steps, step_size,
                  source_repo=HourlyMeasurements(), mirror_repo=SimulatedMeasurements()):
+        self.log = Logger()
         self.network = network
         self.ml_service = ml_service
         self.burning_steps = burning_steps

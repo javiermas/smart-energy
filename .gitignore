@@ -3,6 +3,9 @@ logs
 notebooks/.ipynb_checkpoints/
 smartenergy/network/grid.py
 smartenergy/network/installation/installation_grid.py
+smartenergy/visualization
+node_modules/
+package-lock.json
 .pytest_cache
 .eggs
 smartenergy.egg-info
@@ -10,3 +13,5 @@ smartenergy.egg-info
 *.swp
 *.pyc
 *.xml
+*.js
+*.json

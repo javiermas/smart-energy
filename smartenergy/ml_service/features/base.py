@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 
+from ...logger import Logger
+
 
 class Transformer(ABC):
 
     def __init__(self):
-        pass
+        self.log = Logger()
 
     def __call__(self, *args, **kwargs):
         return self.transform(*args, **kwargs)

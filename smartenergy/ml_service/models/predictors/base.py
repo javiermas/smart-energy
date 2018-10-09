@@ -1,11 +1,13 @@
-import logging
-from pandas import DataFrame, Series
 from abc import ABC, abstractmethod
+from pandas import DataFrame
+
+from ..base import Model
 
 
-class Predictor(ABC):
+class Predictor(Model):
 
     def __init__(self, hyperparameters, id_kwargs=None):
+        super().__init__()
         self.hyperparameters = hyperparameters
         self.id_kwargs = id_kwargs or {}
 

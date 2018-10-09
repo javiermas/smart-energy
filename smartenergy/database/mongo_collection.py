@@ -7,7 +7,7 @@ class MongoCollection(ABC):
         self.coll = connection[coll]
         self.connection = connection
 
-    def load(self):
+    def load_all(self):
         return list(self.coll.find())
 
     def insert_one(self, data):
