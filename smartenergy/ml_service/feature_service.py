@@ -1,11 +1,13 @@
-from pandas import merge
 from functools import reduce
+from pandas import merge
+
 from .base import Service
 
 
 class FeatureService(Service):
 
     def __init__(self, features: list):
+        super().__init__()
         self.features = features
 
     def get_features(self, data):

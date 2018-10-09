@@ -1,4 +1,3 @@
-import logging
 from .base import Service
 from ..database import Models
 
@@ -6,6 +5,7 @@ from ..database import Models
 class ForecastService(Service):
 
     def __init__(self, models=None, connection=Models()):
+        super().__init__()
         self.connection = connection
         self.models = models or self.connection.load()
         self.trained_models = {}
@@ -27,24 +27,26 @@ class ForecastService(Service):
         return predictions
 
     def train(self, data):
+        losses = {}
         for model in self.models:
             train_data = data.copy()
             if self._is_target_missing(model, train_data.columns):
-                logging.debug(f'Missing target for {str(model)}')
+                self.log.debug(f'Missing target for {str(model)}')
                 continue
 
             train_data = train_data.dropna(subset=[*model.target_schema])
             assert not train_data.empty, f'Target should be missing for {str(model)}'
             if len(train_data) < 24 * 7:
-                logging.debug(f'Target too small ({len(data)}) for {str(model)}')
+                self.log.debug(f'Target too small ({len(data)}) for {str(model)}')
                 continue
 
             model_features = [col for col in model.feature_schema.keys() if col in train_data.columns]
             features, target = train_data[model_features], train_data[[*model.target_schema]]
             model.train(features, target)
             self.trained_models[str(model)] = model
-            loss = model.validate(features, target)
-            logging.info(f'{str(model)} model stored (validation score: {loss})')
+            losses[model.__class__.__name__] = model.validate(features, target)
+
+        return losses
 
     @staticmethod
     def _is_target_missing(model, columns):
