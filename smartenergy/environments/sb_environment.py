@@ -1,9 +1,8 @@
-import sys
-import logging
 from time import sleep
 from pandas import DataFrame
 
 from .base import Environment
+from ..database import Performance
 
 DEFAULT_HYPERPARAMETERS = {
     'next_state_weight': 0.1
@@ -14,7 +13,6 @@ class SBEnvironment(Environment):
 
     def __init__(self, hyperparameters=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_up_logging()
         self.translation_dict = {
             'Battery': 'battery_state_discrete',
             'Generator': 'energy_generation_computed_i',
@@ -27,60 +25,64 @@ class SBEnvironment(Environment):
         self.t = self.burning_end
         self.hyperparameters = hyperparameters or DEFAULT_HYPERPARAMETERS
         self.next_state_weight = self.hyperparameters['next_state_weight']
+        self.next_state_weight = 0.1
+        self.training_frequency_steps = 10
+        self.performance_repo = Performance()
 
     def run(self, steps):
         self.initialize()
-        logging.info(f'Running environment for {steps} steps')
+        self.log.info(f'Running environment for {steps} steps')
         sleep(5)
-        for _ in range(steps):
-            self.step()
+        for i in range(steps):
+            self.step(random=False)
+            if (i + 1) % self.training_frequency_steps == 0:
+                loss = self.ml_service.train()
+                self.performance_repo.insert_one({**{'t': self.t}, **loss})
+
+            if self.t.weekday() == 0 and self.t.hour == 0:
+                self.get_weekly_report()
+
+            self.t += self.step_size
 
     def initialize(self):
-        logging.info('Initializing environment')
+        self.log.info('Initializing environment')
         self.mirror_repo.drop()
+        self.performance_repo.drop()
         self._transfer_data(self.start, self.burning_end)
         self.network.initialize()
         self.ml_service.initialize()
         for step in range(self.init_steps):
-            print(f'---------- {self.t} ----------')
-            self._transfer_data(self.t, self.t + self.step_size)
-            self.network.update()
-            readings = self.network.get_reading()
-            data = self.readings_to_data(readings)
-            actions = self.ml_service.get_action(data, random=True)
-            self.network.interact(actions)
-            reward = self.metrics_manager.get_cumulative_reward(readings)
-            self.ml_service.feed_reward(reward)
+            self.step(random=True)
             if (step + 1) % 50 == 0:
-                logging.info(f'{step+1} memories created')
+                self.log.info(f'{step+1} memories created')
 
             self.t += self.step_size
 
         self.mirror_repo.drop()
         self._transfer_data(self.start, self.init_end)
         self.network.initialize()
-        self.ml_service.train()
-        logging.info('Initialization finished')
+        loss = self.ml_service.train()
+        self.performance_repo.insert_one({**{'t': self.t}, **loss})
+        self.log.info('Initialization finished')
         sleep(5)
 
     def _transfer_data(self, start, end):
         data = self.source_repo.load_data_within(start, end)
         self.mirror_repo.insert_many(data.to_dict('records'))
 
-    def step(self):
+    def step(self, random):
         print(f'---------- {self.t} ----------')
         self._transfer_data(self.t, self.t + self.step_size)
         self.network.update()
         readings = self.network.get_reading()
         data = self.readings_to_data(readings)
-        actions = self.ml_service.get_action(data)
+        actions = self.ml_service.get_action(data, random)
         self.network.interact(actions)
-        reward = self.metrics_manager.get_cumulative_reward(readings)
+        readings_next = self.readings_to_data(self.network.get_reading())
+        next_state_value = self.ml_service.get_state_value(readings_next)
+        reward = self.metrics_manager.get_cumulative_reward(readings, next_state_value,
+                                                            self.next_state_weight)
         self.ml_service.feed_reward(reward)
-        self.metrics_manager.update_metrics(readings)
-        self.t += self.step_size
-        if self.t.weekday() == 0 and self.t.hour == 0:
-            self.get_weekly_report()
 
     def readings_to_data(self, readings):
         readings_list = []
@@ -99,8 +101,3 @@ class SBEnvironment(Environment):
         print(f'Simulation excess battery {self.metrics_manager.excess_simulation}')
         print('##############################################################################')
         sleep(10)
-
-    def set_up_logging(self):
-        logging.basicConfig(stream=sys.stdout,
-                            level='DEBUG',
-                            format='self.t:%(levelname)s:%(asctime)s:%(name)s:::%(message)s')
