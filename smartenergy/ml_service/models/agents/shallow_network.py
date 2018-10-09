@@ -16,7 +16,7 @@ class ShallowNetwork(Network):
         tf.reset_default_graph()
         self.graph = tf.Graph()
         with self.graph.as_default():
-            self.state = tf.placeholder(tf.float32, [1, None], name='state')
+            self.state = tf.placeholder(tf.float32, [None, None], name='state')
             #reward = tf.placeholder(tf.float32, None, name='reward')
             #next_state = tf.placeholder(tf.float32, [None, self.state_size], name='next_state')
             # Replace Q by reward 
@@ -32,7 +32,7 @@ class ShallowNetwork(Network):
                 weights[key], Q_out[key], Q_next[key], losses[key] = {}, {}, {}, {}
                 for sub_space_key, sub_space_value in sub_space.items():
                     Q_next[key][sub_space_key] = tf.placeholder(
-                        tf.float32, [1, len(self.action_space[key][sub_space_key])],
+                        tf.float32, [None, len(self.action_space[key][sub_space_key])],
                         name=f'Q_next_{key}_{sub_space_key}')
                     weights[key][sub_space_key] = tf.Variable(
                         self.initializer(shape=[tf.shape(common_layer)[1], len(sub_space_value)]),
@@ -42,7 +42,8 @@ class ShallowNetwork(Network):
                     losses[key][sub_space_key] = tf.losses.mean_squared_error(
                         Q_next[key][sub_space_key], Q_out[key][sub_space_key])
             
-            self.expected_reward = Q_out
+            self.reward_real = Q_next
+            self.reward_expected = Q_out
             self.loss = tf.reduce_mean([loss for sub_space_losses in losses.values()
                                         for loss in sub_space_losses.values()])
             optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
