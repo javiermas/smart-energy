@@ -10,8 +10,8 @@ class ForecastService(Service):
         self.models = models or self.connection.load()
         self.trained_models = {}
 
-    def __call__(self, features):
-        return self.get_forecast(features)
+    def serve(self, *args, **kwargs):
+        return self.get_forecast(*args, **kwargs)
 
     def initialize(self, data):
         self.train(data)
