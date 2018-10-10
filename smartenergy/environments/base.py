@@ -31,3 +31,7 @@ class Environment(ABC):
     @abstractmethod
     def step(self):
         pass
+
+    @abstractmethod
+    def restart(self):
+        pass
