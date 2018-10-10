@@ -6,12 +6,14 @@ from smartenergy.ml_service import MLService, FeatureService, ForecastService, A
 from smartenergy.ml_service.features import LaggedReadings
 from smartenergy.ml_service.models import XGBoostHourlyGenerationStationPredictor, NeuralAgent
 from smartenergy.environments.sb_environment import SBEnvironment
-from smartenergy.database import HourlyMeasurements, Stations
+from smartenergy.database import HourlyMeasurements, Stations, DataStream
 
 parser = ArgumentParser()
 parser.add_argument('--mode')
 args = parser.parse_args()
 
+hourly_measurements = HourlyMeasurements()
+data_stream = DataStream.initialize(hourly_measurements.load_all())
 stations = Stations()
 station_ids = stations.station_ids
 network = Network()
@@ -21,15 +23,14 @@ for _id in station_ids:
 
     station = stations.load_single_station(_id)
     installation_elements = {
-        'generator': installation.Generator({}),
-        'battery': installation.Battery({}, station['battery_capacity']*60/2/15*1000),
-        'consumer': installation.Consumer(),
+        'generator': installation.Generator(data_stream),
+        'battery': installation.Battery(data_stream, station['battery_capacity']*60/2/15*1000),
+        'consumer': installation.Consumer(data_stream),
     }
     _installation = installation.Installation(_id, installation_elements, station['connections'])
     network.add_installation(_installation)
 
 #  ML_service
-hourly_measurements = HourlyMeasurements()
 if args.mode == 'test':
     burning_steps = 24
     init_steps = 24
@@ -71,6 +72,7 @@ ml_service = MLService(
     feature_service=feature_service,
     forecast_service=forecast_service,
     agent_service=agent_service,
+    data_stream=data_stream,
 )
 
 sb_environment = SBEnvironment(
@@ -78,7 +80,8 @@ sb_environment = SBEnvironment(
     network=network,
     burning_steps=burning_steps,
     init_steps=init_steps,
-    step_size=step_size
+    step_size=step_size,
+    data_stream=data_stream,
 )
 
 sb_environment.run(steps=24*7)
