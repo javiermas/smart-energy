@@ -1,19 +1,17 @@
 from numpy.random import normal
 
 from .base import InstallationElement
-from ...database import SimulatedMeasurements
 
 
 class Battery(InstallationElement):
 
-    def __init__(self, pipes, capacity, connection=SimulatedMeasurements()):
-        super().__init__(connection)
-        self.pipes = pipes
+    def __init__(self, data_stream, capacity):
+        super().__init__(data_stream)
         self.state = None
         self.capacity = capacity
 
     def initialize(self):
-        init_measurement = self.connection.get_last_battery_measurement(self.installation)
+        init_measurement = self.data_stream.get_last_battery_measurement(self.installation)
         if init_measurement is None:
             self.state = 50
             return

@@ -6,7 +6,7 @@ from ...logger import Logger
 class Transformer(ABC):
 
     def __init__(self):
-        self.log = Logger()
+        self.log = Logger(self.__class__.__name__)
 
     def __call__(self, *args, **kwargs):
         return self.transform(*args, **kwargs)
