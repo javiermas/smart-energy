@@ -44,7 +44,6 @@ class SBEnvironment(Environment):
                 self.get_weekly_report()
 
             self.t += self.step_size
-            self.t = self.end
             if self.t == self.end:
                 self.log.info(f'Round {self.round} completed')
                 self.restart()
