@@ -34,6 +34,9 @@ class Measurements(MongoCollection):
     def load_first_measurement(self):
         return list(self.coll.find().sort('datetime', 1).limit(1))
 
+    def load_last_measurement(self):
+        return list(self.coll.find().sort('datetime', -1).limit(1))
+
     def get_last_measurement_single_station(self, station_id):
         return list(self.coll.find({'solbox_id': station_id}).sort('datetime', -1).limit(1))
 

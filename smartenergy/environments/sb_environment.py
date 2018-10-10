@@ -20,6 +20,7 @@ class SBEnvironment(Environment):
         }
         # TODO: rethink the different phases
         self.start = self.data_stream.get_first_datetime()
+        self.end = self.source_repo.get_last_datetime()
         self.burning_end = self.start + self.burning_steps * self.step_size
         self.init_end = self.burning_end + self.init_steps * self.step_size
         self.t = self.burning_end
@@ -28,30 +29,41 @@ class SBEnvironment(Environment):
         self.next_state_weight = 0.1
         self.training_frequency_steps = 10
         self.performance_repo = Performance()
+        self.round = 0
 
     def run(self, steps):
         self.initialize()
         self.log.info(f'Running environment for {steps} steps')
         sleep(5)
         for i in range(steps):
-            self.step(random=False)
             if (i + 1) % self.training_frequency_steps == 0:
                 loss = self.ml_service.train()
                 self.performance_repo.insert_one({**{'t': self.t}, **loss})
 
+            self.step(random=False)
             if self.t.weekday() == 0 and self.t.hour == 0:
                 self.get_weekly_report()
 
             self.t += self.step_size
+            self.t = self.end
+            if self.t == self.end:
+                self.log.info(f'Round {self.round} completed')
+                self.restart()
+                self.round += 1
+
+    def restart(self):
+        self.t = self.init_end
+        self.mirror_repo.drop()
+        self._transfer_data(self.start, self.init_end)
+        self.network.initialize()
 
     def initialize(self):
-        import time
-        stime = time.time()
         self.log.info('Initializing environment')
         self.performance_repo.drop()
         self.data_stream.refresh(self.burning_end)
         self.network.initialize()
         self.ml_service.initialize()
+        self.t = self.burning_end
         for step in range(self.init_steps):
             self.step(random=True)
             if (step + 1) % 50 == 0:
@@ -62,8 +74,6 @@ class SBEnvironment(Environment):
         self.data_stream.refresh(self.init_end)
         self.network.initialize()
         self.log.info('Initialization finished')
-        print(f'{time.time() - stime}')
-        assert False
         sleep(5)
 
     def step(self, random):

@@ -9,7 +9,9 @@ from smartenergy.environments.sb_environment import SBEnvironment
 from smartenergy.database import HourlyMeasurements, Stations, DataStream
 
 parser = ArgumentParser()
-parser.add_argument('--mode')
+parser.add_argument('--burning_steps')
+parser.add_argument('--init_steps')
+parser.add_argument('--simulation_steps')
 args = parser.parse_args()
 
 hourly_measurements = HourlyMeasurements()
@@ -31,12 +33,20 @@ for _id in station_ids:
     network.add_installation(_installation)
 
 #  ML_service
-if args.mode == 'test':
-    burning_steps = 24
-    init_steps = 24
-else:
+if args.burning_steps is None:
     burning_steps = 24 * 7
+else:
+    burning_steps = eval(args.burning_steps)
+
+if args.init_steps is None:
     init_steps = 24 * 7
+else:
+    init_steps = eval(args.init_steps)
+
+if args.simulation_steps is None:
+    simulation_steps = 24 * 7
+else:
+    simulation_steps = eval(args.simulation_steps)
 
 step_size = timedelta(hours=1)
 lags = 3
@@ -84,4 +94,4 @@ sb_environment = SBEnvironment(
     data_stream=data_stream,
 )
 
-sb_environment.run(steps=24*7)
+sb_environment.run(steps=simulation_steps)
