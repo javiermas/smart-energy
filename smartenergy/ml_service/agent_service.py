@@ -8,7 +8,7 @@ class AgentService(Service):
         self.agent = agent
         self.action_space = self.agent.action_space
 
-    def __call__(self, *args, **kwargs):
+    def serve(self, *args, **kwargs):
         return self.get_action(*args, **kwargs)
 
     def train(self, memories):

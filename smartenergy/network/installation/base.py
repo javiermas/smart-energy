@@ -42,9 +42,9 @@ class Installation(NetworkElement):
 
 class InstallationElement(NetworkElement):
 
-    def __init__(self, connection):
+    def __init__(self, data_stream):
         super().__init__()
-        self.connection = connection
+        self.data_stream = data_stream
 
     def _assign_id(self, _id):
         self.installation = _id

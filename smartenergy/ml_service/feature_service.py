@@ -10,6 +10,9 @@ class FeatureService(Service):
         super().__init__()
         self.features = features
 
+    def serve(self, *args, **kwargs):
+        return self.get_features(*args, **kwargs)
+
     def get_features(self, data):
         feature_data = dict()
         for feature in self.features:
@@ -17,7 +20,8 @@ class FeatureService(Service):
 
         data = self.merge_features(feature_data).sort_index()
         return data
-
-    def merge_features(self, data):
+    
+    @staticmethod
+    def merge_features(data):
         data = reduce(lambda l, r: merge(l, r, left_index=True, right_index=True), data.values())
         return data
