@@ -20,7 +20,7 @@ class SBEnvironment(Environment):
         }
         # TODO: rethink the different phases
         self.start = self.data_stream.get_first_datetime()
-        self.end = self.source_repo.get_last_datetime()
+        self.end = self.data_stream.get_last_datetime()
         self.burning_end = self.start + self.burning_steps * self.step_size
         self.init_end = self.burning_end + self.init_steps * self.step_size
         self.t = self.burning_end

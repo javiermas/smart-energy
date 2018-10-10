@@ -46,3 +46,6 @@ class DataStream(DataFrame):
 
     def get_first_datetime(self):
         return self.index.get_level_values('datetime').min()
+
+    def get_last_datetime(self):
+        return self.index.get_level_values('datetime').max()
