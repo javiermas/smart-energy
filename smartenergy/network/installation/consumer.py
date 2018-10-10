@@ -1,17 +1,17 @@
 from .base import InstallationElement
-from ...database import SimulatedMeasurements
+from ...database import DataStream
 
 
 class Consumer(InstallationElement):
 
-    def __init__(self, connection=SimulatedMeasurements()):
-        super().__init__(connection)
+    def __init__(self, data_stream):
+        self.data_stream = data_stream
     
     def initialize(self):
         pass
 
     def get_reading(self):
-        return self.connection.get_last_consumer_measurement(self.installation)
+        return self.data_stream.get_last_consumer_measurement(self.installation)
 
     def interact(self, action):
         pass

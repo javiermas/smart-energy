@@ -4,14 +4,14 @@ from scipy.stats import norm
 
 class MetricsManager(object):
 
-    def __init__(self, source_repo):
-        self.source_repo = source_repo
+    def __init__(self, data_stream):
+        self.data_stream = data_stream
         self.excess_real = 0
         self.excess_simulation = 0
 
     def update_metrics(self, readings):
-        self.excess_real += nanmean([self.source_repo.get_last_excess_energy_measurement(i)
-                                     for i in self.source_repo.station_ids])
+        self.excess_real += nanmean([self.data_stream.get_last_excess_energy_measurement(i)
+                                     for i in self.data_stream.get_station_ids()])
         self.excess_simulation += nanmean([installation['Generator'] for installation in readings.values()
                                            if installation['Battery'] == 100])
 
