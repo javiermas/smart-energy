@@ -19,7 +19,7 @@ class SBEnvironment(Environment):
             'Consumer': 'energy_consumption_computed_i',
         }
         # TODO: rethink the different phases
-        self.start = self.source_repo.load_first_measurement()[0]['datetime']
+        self.start = self.data_stream.get_first_datetime()
         self.burning_end = self.start + self.burning_steps * self.step_size
         self.init_end = self.burning_end + self.init_steps * self.step_size
         self.t = self.burning_end
@@ -45,10 +45,11 @@ class SBEnvironment(Environment):
             self.t += self.step_size
 
     def initialize(self):
+        import time
+        stime = time.time()
         self.log.info('Initializing environment')
-        self.mirror_repo.drop()
         self.performance_repo.drop()
-        self._transfer_data(self.start, self.burning_end)
+        self.data_stream.refresh(self.burning_end)
         self.network.initialize()
         self.ml_service.initialize()
         for step in range(self.init_steps):
@@ -58,21 +59,16 @@ class SBEnvironment(Environment):
 
             self.t += self.step_size
 
-        self.mirror_repo.drop()
-        self._transfer_data(self.start, self.init_end)
+        self.data_stream.refresh(self.init_end)
         self.network.initialize()
-        loss = self.ml_service.train()
-        self.performance_repo.insert_one({**{'t': self.t}, **loss})
         self.log.info('Initialization finished')
+        print(f'{time.time() - stime}')
+        assert False
         sleep(5)
-
-    def _transfer_data(self, start, end):
-        data = self.source_repo.load_data_within(start, end)
-        self.mirror_repo.insert_many(data.to_dict('records'))
 
     def step(self, random):
         print(f'---------- {self.t} ----------')
-        self._transfer_data(self.t, self.t + self.step_size)
+        self.data_stream.refresh(self.t)
         self.network.update()
         readings = self.network.get_reading()
         data = self.readings_to_data(readings)
@@ -92,7 +88,7 @@ class SBEnvironment(Environment):
             reading_dict['datetime'] = self.t
             readings_list.append(reading_dict)
 
-        return DataFrame(readings_list)
+        return DataFrame(readings_list).set_index(['solbox_id', 'datetime'])
 
     def get_weekly_report(self):
         print('##############################################################################')
