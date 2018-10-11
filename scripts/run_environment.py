@@ -2,9 +2,8 @@ from argparse import ArgumentParser
 from datetime import timedelta
 
 from smartenergy.network import Network, installation
-from smartenergy.ml_service import MLService, FeatureService, ForecastService, AgentService
+from smartenergy.ml_service import MLService, FeatureService, ForecastService, AgentService, models
 from smartenergy.ml_service.features import LaggedReadings
-from smartenergy.ml_service.models import XGBoostHourlyGenerationStationPredictor, NeuralAgent
 from smartenergy.environments.sb_environment import SBEnvironment
 from smartenergy.database import HourlyMeasurements, Stations, DataStream
 
@@ -52,8 +51,9 @@ step_size = timedelta(hours=1)
 lags = 3
 features = [LaggedReadings(lags=lags)]
 feature_service = FeatureService(features)
-models = [XGBoostHourlyGenerationStationPredictor(station_id=station_id) for station_id in station_ids]
-forecast_service = ForecastService(models)
+forecasters = [models.XGBoostHourlyGenerationStationPredictor(station_id=station_id)
+               for station_id in station_ids]
+forecast_service = ForecastService(forecasters)
 action_space = {
     f'installation_{_id}': {
         'generator': range(1),  # 'generator_covered_energy'
@@ -63,10 +63,8 @@ action_space = {
 agent_parameters = {
     'epsilon': 0.1,
 }
-network_parameters = {
-    'hidden_units': 5,
-    'learning_rate': 0.01,
-}
+
+network_parameters = models.optimization.spaces.shallow_network_space()
 
 non_tunable_parameters = {
     'action_space': action_space,
@@ -75,7 +73,7 @@ non_tunable_parameters = {
 parameters = {**agent_parameters, **
               network_parameters, **non_tunable_parameters}
 
-basic_agent = NeuralAgent(**parameters)
+basic_agent = models.NeuralAgent(**parameters)
 agent_service = AgentService(basic_agent)
 
 ml_service = MLService(
